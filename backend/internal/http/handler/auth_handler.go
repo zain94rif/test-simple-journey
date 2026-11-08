@@ -19,14 +19,25 @@ func NewAuthHandler(auth *service.AuthService) *AuthHandler {
 	return &AuthHandler{auth: auth}
 }
 
-type registerRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type RegisterRequest struct {
+	Name     string `json:"name" example:"Budi Santoso"`
+	Email    string `json:"email" example:"budi@example.com"`
+	Password string `json:"password" example:"Rahasia123"`
 }
 
+// Register godoc
+// @Summary      Registrasi pengguna baru
+// @Description  Membuat akun baru. Peran akun baru selalu "requester".
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      RegisterRequest  true  "Data registrasi"
+// @Success      201   {object}  UserEnvelope
+// @Failure      400   {object}  response.ErrorEnvelope
+// @Failure      409   {object}  response.ErrorEnvelope
+// @Router       /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
-	var req registerRequest
+	var req RegisterRequest
 	if err := response.BindJSON(c, &req); err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -43,20 +54,31 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	response.Created(c, toUserResponse(user))
 }
 
-type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type LoginRequest struct {
+	Email    string `json:"email" example:"admin@helpdesk.local"`
+	Password string `json:"password" example:"Admin123!"`
 }
 
-type loginResponse struct {
+type LoginResponse struct {
 	Token     string       `json:"token"`
-	TokenType string       `json:"token_type"`
+	TokenType string       `json:"token_type" example:"Bearer"`
 	ExpiresAt time.Time    `json:"expires_at"`
-	User      userResponse `json:"user"`
+	User      UserResponse `json:"user"`
 }
 
+// Login godoc
+// @Summary      Login dan dapatkan JWT
+// @Description  Menukar email dan password dengan token JWT HS256.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      LoginRequest  true  "Kredensial login"
+// @Success      200   {object}  LoginEnvelope
+// @Failure      400   {object}  response.ErrorEnvelope
+// @Failure      401   {object}  response.ErrorEnvelope
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req loginRequest
+	var req LoginRequest
 	if err := response.BindJSON(c, &req); err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -69,7 +91,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.OK(c, loginResponse{
+	response.OK(c, LoginResponse{
 		Token:     result.Token,
 		TokenType: "Bearer",
 		ExpiresAt: result.ExpiresAt,
@@ -77,6 +99,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
+// Me godoc
+// @Summary      Profil pengguna saat ini
+// @Description  Mengembalikan pengguna yang terautentikasi. Peran dibaca ulang dari database pada setiap request.
+// @Tags         auth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  UserEnvelope
+// @Failure      401  {object}  response.ErrorEnvelope
+// @Router       /me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	user := middleware.CurrentUser(c)
 	if user.ID == 0 {

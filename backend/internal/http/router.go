@@ -2,6 +2,8 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"helpdesk/backend/internal/auth"
 	"helpdesk/backend/internal/config"
@@ -46,6 +48,8 @@ func NewRouter(deps Dependencies) *gin.Engine {
 			"message": "Method tidak diizinkan untuk endpoint ini.",
 		}})
 	})
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := router.Group("/api")
 	api.GET("/health", deps.Health.Health)

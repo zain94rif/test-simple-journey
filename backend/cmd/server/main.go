@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
+	_ "helpdesk/backend/docs"
 	"helpdesk/backend/internal/auth"
 	"helpdesk/backend/internal/config"
 	apphttp "helpdesk/backend/internal/http"
@@ -25,6 +26,15 @@ import (
 	"helpdesk/backend/internal/service"
 )
 
+// @title           Helpdesk API
+// @version         1.0
+// @description     REST API Helpdesk technical test: autentikasi JWT, tiket dengan aturan transisi status, komentar publik/internal, dan manajemen pengguna oleh admin.
+// @description     Semua endpoint kecuali health, register, dan login memerlukan header Authorization: Bearer <token>.
+// @BasePath        /api
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
+// @description     Masukkan "Bearer" diikuti spasi dan JWT, contoh: Bearer eyJhbGciOi...
 func main() {
 	if err := run(); err != nil {
 		slog.Error("aplikasi berhenti", "error", err)

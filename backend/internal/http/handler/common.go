@@ -10,7 +10,7 @@ import (
 	"helpdesk/backend/internal/domain"
 )
 
-type userResponse struct {
+type UserResponse struct {
 	ID        int64       `json:"id"`
 	Name      string      `json:"name"`
 	Email     string      `json:"email"`
@@ -18,8 +18,8 @@ type userResponse struct {
 	CreatedAt time.Time   `json:"created_at"`
 }
 
-func toUserResponse(user domain.User) userResponse {
-	return userResponse{
+func toUserResponse(user domain.User) UserResponse {
+	return UserResponse{
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
@@ -28,34 +28,34 @@ func toUserResponse(user domain.User) userResponse {
 	}
 }
 
-type ticketUserResponse struct {
+type TicketUserResponse struct {
 	ID    int64  `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
 
-func toTicketUserResponse(user *domain.TicketUser) *ticketUserResponse {
+func toTicketUserResponse(user *domain.TicketUser) *TicketUserResponse {
 	if user == nil {
 		return nil
 	}
-	return &ticketUserResponse{ID: user.ID, Name: user.Name, Email: user.Email}
+	return &TicketUserResponse{ID: user.ID, Name: user.Name, Email: user.Email}
 }
 
-type ticketResponse struct {
+type TicketResponse struct {
 	ID          int64               `json:"id"`
 	Title       string              `json:"title"`
 	Description string              `json:"description"`
 	Category    domain.Category     `json:"category"`
 	Priority    domain.Priority     `json:"priority"`
 	Status      domain.Status       `json:"status"`
-	Requester   *ticketUserResponse `json:"requester"`
-	Assignee    *ticketUserResponse `json:"assignee"`
+	Requester   *TicketUserResponse `json:"requester"`
+	Assignee    *TicketUserResponse `json:"assignee"`
 	CreatedAt   time.Time           `json:"created_at"`
 	UpdatedAt   time.Time           `json:"updated_at"`
 }
 
-func toTicketResponse(ticket domain.Ticket) ticketResponse {
-	return ticketResponse{
+func toTicketResponse(ticket domain.Ticket) TicketResponse {
+	return TicketResponse{
 		ID:          ticket.ID,
 		Title:       ticket.Title,
 		Description: ticket.Description,
@@ -69,27 +69,27 @@ func toTicketResponse(ticket domain.Ticket) ticketResponse {
 	}
 }
 
-type commentResponse struct {
+type CommentResponse struct {
 	ID         int64         `json:"id"`
 	TicketID   int64         `json:"ticket_id"`
-	Author     commentAuthor `json:"author"`
+	Author     CommentAuthor `json:"author"`
 	Body       string        `json:"body"`
 	IsInternal bool          `json:"is_internal"`
 	CreatedAt  time.Time     `json:"created_at"`
 }
 
-type commentAuthor struct {
+type CommentAuthor struct {
 	ID   int64       `json:"id"`
 	Name string      `json:"name"`
 	Role domain.Role `json:"role"`
 }
 
-func toCommentResponse(comment domain.Comment) commentResponse {
-	var author commentAuthor
+func toCommentResponse(comment domain.Comment) CommentResponse {
+	var author CommentAuthor
 	if comment.Author != nil {
-		author = commentAuthor{ID: comment.Author.ID, Name: comment.Author.Name, Role: comment.Author.Role}
+		author = CommentAuthor{ID: comment.Author.ID, Name: comment.Author.Name, Role: comment.Author.Role}
 	}
-	return commentResponse{
+	return CommentResponse{
 		ID:         comment.ID,
 		TicketID:   comment.TicketID,
 		Author:     author,
@@ -99,8 +99,8 @@ func toCommentResponse(comment domain.Comment) commentResponse {
 	}
 }
 
-func toCommentResponses(comments []domain.Comment) []commentResponse {
-	out := make([]commentResponse, 0, len(comments))
+func toCommentResponses(comments []domain.Comment) []CommentResponse {
+	out := make([]CommentResponse, 0, len(comments))
 	for _, comment := range comments {
 		out = append(out, toCommentResponse(comment))
 	}

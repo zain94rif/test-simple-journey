@@ -11,14 +11,14 @@ import (
 	"helpdesk/backend/internal/domain"
 )
 
-type errorDetail struct {
+type ErrorDetail struct {
 	Code    string            `json:"code"`
 	Message string            `json:"message"`
 	Details map[string]string `json:"details,omitempty"`
 }
 
-type errorEnvelope struct {
-	Error errorDetail `json:"error"`
+type ErrorEnvelope struct {
+	Error ErrorDetail `json:"error"`
 }
 
 type Meta struct {
@@ -52,7 +52,7 @@ func ErrorFrom(c *gin.Context, err error) {
 				"path", c.FullPath(),
 			)
 		}
-		c.JSON(appErr.Status, errorEnvelope{Error: errorDetail{
+		c.JSON(appErr.Status, ErrorEnvelope{Error: ErrorDetail{
 			Code:    appErr.Code,
 			Message: appErr.Message,
 			Details: appErr.Details,
@@ -65,7 +65,7 @@ func ErrorFrom(c *gin.Context, err error) {
 		"request_id", c.GetString("request_id"),
 		"path", c.FullPath(),
 	)
-	c.JSON(http.StatusInternalServerError, errorEnvelope{Error: errorDetail{
+	c.JSON(http.StatusInternalServerError, ErrorEnvelope{Error: ErrorDetail{
 		Code:    "INTERNAL_ERROR",
 		Message: "Terjadi kesalahan pada server.",
 	}})

@@ -20,6 +20,14 @@ func NewHealthHandler(db Pinger) *HealthHandler {
 	return &HealthHandler{db: db}
 }
 
+// Health godoc
+// @Summary      Health check
+// @Description  Memeriksa koneksi database. Tidak memerlukan autentikasi.
+// @Tags         health
+// @Produce      json
+// @Success      200  {object}  HealthResponse
+// @Failure      503  {object}  HealthResponse
+// @Router       /health [get]
 func (h *HealthHandler) Health(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
 	defer cancel()

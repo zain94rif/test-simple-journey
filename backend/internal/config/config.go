@@ -17,21 +17,25 @@ type SeedAccount struct {
 
 // Config is the complete application configuration, loaded once at startup.
 type Config struct {
-	AppEnv        string
-	Port          string
-	DatabaseURL   string
-	DBMaxConns    int32
-	JWTSecret     string
-	JWTTTL        time.Duration
-	BcryptCost    int
-	CORSOrigins   []string
-	AutoMigrate   bool
-	AutoSeed      bool
-	SeedAdmin     SeedAccount
-	SeedAgent     SeedAccount
-	SeedRequester SeedAccount
-	LogLevel      string
-	MaxBodyBytes  int64
+	AppEnv         string
+	Port           string
+	DatabaseURL    string
+	DBMaxConns     int32
+	JWTSecret      string
+	JWTTTL         time.Duration
+	BcryptCost     int
+	CORSOrigins    []string
+	AutoMigrate    bool
+	AutoSeed       bool
+	SeedDemoData   bool
+	SeedAdmin      SeedAccount
+	SeedAgent      SeedAccount
+	SeedAgent2     SeedAccount
+	SeedRequester  SeedAccount
+	SeedRequester2 SeedAccount
+	SeedRequester3 SeedAccount
+	LogLevel       string
+	MaxBodyBytes   int64
 }
 
 // Load reads configuration from environment variables and validates it.
@@ -60,6 +64,9 @@ func Load() (Config, error) {
 	if cfg.AutoSeed, err = parseBool("AUTO_SEED", true); err != nil {
 		return Config{}, err
 	}
+	if cfg.SeedDemoData, err = parseBool("SEED_DEMO_DATA", true); err != nil {
+		return Config{}, err
+	}
 	if cfg.MaxBodyBytes, err = parseInt64("MAX_BODY_BYTES", 1<<20); err != nil {
 		return Config{}, err
 	}
@@ -80,6 +87,23 @@ func Load() (Config, error) {
 		Name:     getenv("SEED_REQUESTER_NAME", "Requester Satu"),
 		Email:    strings.ToLower(getenv("SEED_REQUESTER_EMAIL", "requester@helpdesk.local")),
 		Password: os.Getenv("SEED_REQUESTER_PASSWORD"),
+	}
+	// Extra demo accounts reuse the same password by default so a fresh clone
+	// still works with only the three mandatory SEED_*_PASSWORD variables.
+	cfg.SeedAgent2 = SeedAccount{
+		Name:     getenv("SEED_AGENT2_NAME", "Agent Dua"),
+		Email:    strings.ToLower(getenv("SEED_AGENT2_EMAIL", "agent2@helpdesk.local")),
+		Password: firstNonEmpty(os.Getenv("SEED_AGENT2_PASSWORD"), cfg.SeedAgent.Password),
+	}
+	cfg.SeedRequester2 = SeedAccount{
+		Name:     getenv("SEED_REQUESTER2_NAME", "Requester Dua"),
+		Email:    strings.ToLower(getenv("SEED_REQUESTER2_EMAIL", "requester2@helpdesk.local")),
+		Password: firstNonEmpty(os.Getenv("SEED_REQUESTER2_PASSWORD"), cfg.SeedRequester.Password),
+	}
+	cfg.SeedRequester3 = SeedAccount{
+		Name:     getenv("SEED_REQUESTER3_NAME", "Requester Tiga"),
+		Email:    strings.ToLower(getenv("SEED_REQUESTER3_EMAIL", "requester3@helpdesk.local")),
+		Password: firstNonEmpty(os.Getenv("SEED_REQUESTER3_PASSWORD"), cfg.SeedRequester.Password),
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -106,9 +130,12 @@ func (c Config) validate() error {
 	}
 	if c.AutoSeed {
 		for label, acc := range map[string]SeedAccount{
-			"admin":     c.SeedAdmin,
-			"agent":     c.SeedAgent,
-			"requester": c.SeedRequester,
+			"admin":      c.SeedAdmin,
+			"agent":      c.SeedAgent,
+			"agent2":     c.SeedAgent2,
+			"requester":  c.SeedRequester,
+			"requester2": c.SeedRequester2,
+			"requester3": c.SeedRequester3,
 		} {
 			if acc.Name == "" || acc.Email == "" {
 				return fmt.Errorf("seed %s: nama dan email wajib diisi", label)
@@ -129,6 +156,15 @@ func getenv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func splitCSV(raw string) []string {

@@ -20,15 +20,27 @@ func NewTicketHandler(tickets *service.TicketService) *TicketHandler {
 	return &TicketHandler{tickets: tickets}
 }
 
-type createTicketRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Category    string `json:"category"`
-	Priority    string `json:"priority"`
+type CreateTicketRequest struct {
+	Title       string `json:"title" example:"Laptop tidak menyala"`
+	Description string `json:"description" example:"Laptop mati total setelah update sistem."`
+	Category    string `json:"category" example:"hardware" enums:"hardware,software,network,access,other"`
+	Priority    string `json:"priority" example:"high" enums:"low,medium,high,urgent"`
 }
 
+// Create godoc
+// @Summary      Buat tiket baru
+// @Description  Requester membuat tiket. Status selalu "open" dan requester diambil dari token.
+// @Tags         tickets
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body      CreateTicketRequest  true  "Data tiket"
+// @Success      201   {object}  TicketEnvelope
+// @Failure      400   {object}  response.ErrorEnvelope
+// @Failure      401   {object}  response.ErrorEnvelope
+// @Router       /tickets [post]
 func (h *TicketHandler) Create(c *gin.Context) {
-	var req createTicketRequest
+	var req CreateTicketRequest
 	if err := response.BindJSON(c, &req); err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -46,6 +58,25 @@ func (h *TicketHandler) Create(c *gin.Context) {
 	response.Created(c, toTicketResponse(ticket))
 }
 
+// List godoc
+// @Summary      Daftar tiket
+// @Description  Requester hanya melihat tiket miliknya; agent dan admin melihat semua tiket. Mendukung filter, pencarian judul, pagination, dan sorting.
+// @Tags         tickets
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page         query     int     false  "Halaman (default 1)"
+// @Param        per_page     query     int     false  "Jumlah per halaman (1-100, default 20)"
+// @Param        status       query     string  false  "Filter status"  Enums(open, in_progress, resolved, closed)
+// @Param        priority     query     string  false  "Filter prioritas"  Enums(low, medium, high, urgent)
+// @Param        assignee_id  query     int     false  "Filter assignee"
+// @Param        unassigned   query     bool    false  "Hanya tiket tanpa assignee"
+// @Param        search       query     string  false  "Cari pada judul tiket"
+// @Param        sort         query     string  false  "Kolom sort"  Enums(created_at, updated_at, priority, status)
+// @Param        order        query     string  false  "Arah sort"  Enums(asc, desc)
+// @Success      200  {object}  TicketListEnvelope
+// @Failure      400  {object}  response.ErrorEnvelope
+// @Failure      401  {object}  response.ErrorEnvelope
+// @Router       /tickets [get]
 func (h *TicketHandler) List(c *gin.Context) {
 	page, appErr := parsePositiveIntQuery(c, "page", 1)
 	if appErr != nil {
@@ -98,18 +129,30 @@ func (h *TicketHandler) List(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	items := make([]ticketResponse, 0, len(tickets))
+	items := make([]TicketResponse, 0, len(tickets))
 	for _, ticket := range tickets {
 		items = append(items, toTicketResponse(ticket))
 	}
 	response.List(c, items, response.MetaFrom(page, perPage, total))
 }
 
-type ticketDetailResponse struct {
-	ticketResponse
-	Comments []commentResponse `json:"comments"`
+type TicketDetailResponse struct {
+	TicketResponse
+	Comments []CommentResponse `json:"comments"`
 }
 
+// Get godoc
+// @Summary      Detail tiket dan komentar
+// @Description  Requester hanya dapat mengakses tiketnya sendiri. Catatan internal (is_internal=true) hanya dikembalikan untuk agent dan admin.
+// @Tags         tickets
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Ticket ID"
+// @Success      200  {object}  TicketDetailEnvelope
+// @Failure      401  {object}  response.ErrorEnvelope
+// @Failure      403  {object}  response.ErrorEnvelope
+// @Failure      404  {object}  response.ErrorEnvelope
+// @Router       /tickets/{id} [get]
 func (h *TicketHandler) Get(c *gin.Context) {
 	id, appErr := parseIDParam(c, "id")
 	if appErr != nil {
@@ -121,18 +164,34 @@ func (h *TicketHandler) Get(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.OK(c, ticketDetailResponse{
-		ticketResponse: toTicketResponse(detail.Ticket),
+	response.OK(c, TicketDetailResponse{
+		TicketResponse: toTicketResponse(detail.Ticket),
 		Comments:       toCommentResponses(detail.Comments),
 	})
 }
 
-type updateTicketRequest struct {
-	Status     *string         `json:"status"`
-	Priority   *string         `json:"priority"`
-	AssigneeID json.RawMessage `json:"assignee_id"`
+type UpdateTicketRequest struct {
+	Status     *string         `json:"status" example:"in_progress"`
+	Priority   *string         `json:"priority" example:"urgent"`
+	AssigneeID json.RawMessage `json:"assignee_id" swaggertype:"integer" example:"2"`
 }
 
+// Update godoc
+// @Summary      Ubah status, prioritas, atau assignee tiket
+// @Description  Hanya transisi status yang diizinkan PRD yang diterima; transisi lain menghasilkan 409 INVALID_TRANSITION. Agent hanya dapat assign dirinya sendiri, admin dapat assign agent/admin. Kirim assignee_id: null untuk melepas assignee.
+// @Tags         tickets
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id    path      int                  true  "Ticket ID"
+// @Param        body  body      UpdateTicketRequest  true  "Field yang diubah"
+// @Success      200   {object}  TicketEnvelope
+// @Failure      400   {object}  response.ErrorEnvelope
+// @Failure      401   {object}  response.ErrorEnvelope
+// @Failure      403   {object}  response.ErrorEnvelope
+// @Failure      404   {object}  response.ErrorEnvelope
+// @Failure      409   {object}  response.ErrorEnvelope
+// @Router       /tickets/{id} [patch]
 func (h *TicketHandler) Update(c *gin.Context) {
 	id, appErr := parseIDParam(c, "id")
 	if appErr != nil {
@@ -140,7 +199,7 @@ func (h *TicketHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var req updateTicketRequest
+	var req UpdateTicketRequest
 	if err := response.BindJSON(c, &req); err != nil {
 		response.ErrorFrom(c, err)
 		return
