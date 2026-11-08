@@ -1,0 +1,768 @@
+basePath: /api
+definitions:
+  helpdesk_backend_internal_domain.Category:
+    enum:
+    - hardware
+    - software
+    - network
+    - access
+    - other
+    type: string
+    x-enum-varnames:
+    - CategoryHardware
+    - CategorySoftware
+    - CategoryNetwork
+    - CategoryAccess
+    - CategoryOther
+  helpdesk_backend_internal_domain.Priority:
+    enum:
+    - low
+    - medium
+    - high
+    - urgent
+    type: string
+    x-enum-varnames:
+    - PriorityLow
+    - PriorityMedium
+    - PriorityHigh
+    - PriorityUrgent
+  helpdesk_backend_internal_domain.Role:
+    enum:
+    - requester
+    - agent
+    - admin
+    type: string
+    x-enum-varnames:
+    - RoleRequester
+    - RoleAgent
+    - RoleAdmin
+  helpdesk_backend_internal_domain.Status:
+    enum:
+    - open
+    - in_progress
+    - resolved
+    - closed
+    type: string
+    x-enum-varnames:
+    - StatusOpen
+    - StatusInProgress
+    - StatusResolved
+    - StatusClosed
+  helpdesk_backend_internal_http_response.ErrorDetail:
+    properties:
+      code:
+        type: string
+      details:
+        additionalProperties:
+          type: string
+        type: object
+      message:
+        type: string
+    type: object
+  helpdesk_backend_internal_http_response.ErrorEnvelope:
+    properties:
+      error:
+        $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorDetail'
+    type: object
+  helpdesk_backend_internal_http_response.Meta:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  internal_http_handler.CommentAuthor:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        $ref: '#/definitions/helpdesk_backend_internal_domain.Role'
+    type: object
+  internal_http_handler.CommentEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/internal_http_handler.CommentResponse'
+    type: object
+  internal_http_handler.CommentResponse:
+    properties:
+      author:
+        $ref: '#/definitions/internal_http_handler.CommentAuthor'
+      body:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_internal:
+        type: boolean
+      ticket_id:
+        type: integer
+    type: object
+  internal_http_handler.CreateCommentRequest:
+    properties:
+      body:
+        example: Sedang kami cek, mohon ditunggu.
+        type: string
+      is_internal:
+        example: false
+        type: boolean
+    type: object
+  internal_http_handler.CreateTicketRequest:
+    properties:
+      category:
+        enum:
+        - hardware
+        - software
+        - network
+        - access
+        - other
+        example: hardware
+        type: string
+      description:
+        example: Laptop mati total setelah update sistem.
+        type: string
+      priority:
+        enum:
+        - low
+        - medium
+        - high
+        - urgent
+        example: high
+        type: string
+      title:
+        example: Laptop tidak menyala
+        type: string
+    type: object
+  internal_http_handler.HealthResponse:
+    properties:
+      db:
+        example: up
+        type: string
+      status:
+        example: ok
+        type: string
+    type: object
+  internal_http_handler.LoginEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/internal_http_handler.LoginResponse'
+    type: object
+  internal_http_handler.LoginRequest:
+    properties:
+      email:
+        example: admin@helpdesk.local
+        type: string
+      password:
+        example: Admin123!
+        type: string
+    type: object
+  internal_http_handler.LoginResponse:
+    properties:
+      expires_at:
+        type: string
+      token:
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+      user:
+        $ref: '#/definitions/internal_http_handler.UserResponse'
+    type: object
+  internal_http_handler.RegisterRequest:
+    properties:
+      email:
+        example: budi@example.com
+        type: string
+      name:
+        example: Budi Santoso
+        type: string
+      password:
+        example: Rahasia123
+        type: string
+    type: object
+  internal_http_handler.TicketDetailEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/internal_http_handler.TicketDetailResponse'
+    type: object
+  internal_http_handler.TicketDetailResponse:
+    properties:
+      assignee:
+        $ref: '#/definitions/internal_http_handler.TicketUserResponse'
+      category:
+        $ref: '#/definitions/helpdesk_backend_internal_domain.Category'
+      comments:
+        items:
+          $ref: '#/definitions/internal_http_handler.CommentResponse'
+        type: array
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      priority:
+        $ref: '#/definitions/helpdesk_backend_internal_domain.Priority'
+      requester:
+        $ref: '#/definitions/internal_http_handler.TicketUserResponse'
+      status:
+        $ref: '#/definitions/helpdesk_backend_internal_domain.Status'
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_http_handler.TicketEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/internal_http_handler.TicketResponse'
+    type: object
+  internal_http_handler.TicketListEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_http_handler.TicketResponse'
+        type: array
+      meta:
+        $ref: '#/definitions/helpdesk_backend_internal_http_response.Meta'
+    type: object
+  internal_http_handler.TicketResponse:
+    properties:
+      assignee:
+        $ref: '#/definitions/internal_http_handler.TicketUserResponse'
+      category:
+        $ref: '#/definitions/helpdesk_backend_internal_domain.Category'
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      priority:
+        $ref: '#/definitions/helpdesk_backend_internal_domain.Priority'
+      requester:
+        $ref: '#/definitions/internal_http_handler.TicketUserResponse'
+      status:
+        $ref: '#/definitions/helpdesk_backend_internal_domain.Status'
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_http_handler.TicketUserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  internal_http_handler.UpdateRoleRequest:
+    properties:
+      role:
+        enum:
+        - requester
+        - agent
+        - admin
+        example: agent
+        type: string
+    type: object
+  internal_http_handler.UpdateTicketRequest:
+    properties:
+      assignee_id:
+        example: 2
+        type: integer
+      priority:
+        example: urgent
+        type: string
+      status:
+        example: in_progress
+        type: string
+    type: object
+  internal_http_handler.UserEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/internal_http_handler.UserResponse'
+    type: object
+  internal_http_handler.UserListEnvelope:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_http_handler.UserResponse'
+        type: array
+      meta:
+        $ref: '#/definitions/helpdesk_backend_internal_http_response.Meta'
+    type: object
+  internal_http_handler.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        $ref: '#/definitions/helpdesk_backend_internal_domain.Role'
+    type: object
+info:
+  contact: {}
+  description: |-
+    REST API Helpdesk technical test: autentikasi JWT, tiket dengan aturan transisi status, komentar publik/internal, dan manajemen pengguna oleh admin.
+    Semua endpoint kecuali health, register, dan login memerlukan header Authorization: Bearer <token>.
+  title: Helpdesk API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Menukar email dan password dengan token JWT HS256.
+      parameters:
+      - description: Kredensial login
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handler.LoginEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+      summary: Login dan dapatkan JWT
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Membuat akun baru. Peran akun baru selalu "requester".
+      parameters:
+      - description: Data registrasi
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handler.UserEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+      summary: Registrasi pengguna baru
+      tags:
+      - auth
+  /health:
+    get:
+      description: Memeriksa koneksi database. Tidak memerlukan autentikasi.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handler.HealthResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/internal_http_handler.HealthResponse'
+      summary: Health check
+      tags:
+      - health
+  /me:
+    get:
+      description: Mengembalikan pengguna yang terautentikasi. Peran dibaca ulang
+        dari database pada setiap request.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handler.UserEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Profil pengguna saat ini
+      tags:
+      - auth
+  /tickets:
+    get:
+      description: Requester hanya melihat tiket miliknya; agent dan admin melihat
+        semua tiket. Mendukung filter, pencarian judul, pagination, dan sorting.
+      parameters:
+      - description: Halaman (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah per halaman (1-100, default 20)
+        in: query
+        name: per_page
+        type: integer
+      - description: Filter status
+        enum:
+        - open
+        - in_progress
+        - resolved
+        - closed
+        in: query
+        name: status
+        type: string
+      - description: Filter prioritas
+        enum:
+        - low
+        - medium
+        - high
+        - urgent
+        in: query
+        name: priority
+        type: string
+      - description: Filter assignee
+        in: query
+        name: assignee_id
+        type: integer
+      - description: Hanya tiket tanpa assignee
+        in: query
+        name: unassigned
+        type: boolean
+      - description: Cari pada judul tiket
+        in: query
+        name: search
+        type: string
+      - description: Kolom sort
+        enum:
+        - created_at
+        - updated_at
+        - priority
+        - status
+        in: query
+        name: sort
+        type: string
+      - description: Arah sort
+        enum:
+        - asc
+        - desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handler.TicketListEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Daftar tiket
+      tags:
+      - tickets
+    post:
+      consumes:
+      - application/json
+      description: Requester membuat tiket. Status selalu "open" dan requester diambil
+        dari token.
+      parameters:
+      - description: Data tiket
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handler.CreateTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handler.TicketEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Buat tiket baru
+      tags:
+      - tickets
+  /tickets/{id}:
+    get:
+      description: Requester hanya dapat mengakses tiketnya sendiri. Catatan internal
+        (is_internal=true) hanya dikembalikan untuk agent dan admin.
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handler.TicketDetailEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Detail tiket dan komentar
+      tags:
+      - tickets
+    patch:
+      consumes:
+      - application/json
+      description: 'Hanya transisi status yang diizinkan PRD yang diterima; transisi
+        lain menghasilkan 409 INVALID_TRANSITION. Agent hanya dapat assign dirinya
+        sendiri, admin dapat assign agent/admin. Kirim assignee_id: null untuk melepas
+        assignee.'
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Field yang diubah
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handler.UpdateTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handler.TicketEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Ubah status, prioritas, atau assignee tiket
+      tags:
+      - tickets
+  /tickets/{id}/comments:
+    post:
+      consumes:
+      - application/json
+      description: Requester hanya boleh membuat komentar publik pada tiketnya sendiri.
+        Catatan internal (is_internal=true) khusus agent dan admin.
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Isi komentar
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handler.CreateCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handler.CommentEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Tambah komentar atau catatan internal
+      tags:
+      - comments
+  /users:
+    get:
+      description: Khusus admin. Mendukung pencarian nama/email, filter peran, dan
+        pagination.
+      parameters:
+      - description: Halaman (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah per halaman (1-100, default 20)
+        in: query
+        name: per_page
+        type: integer
+      - description: Filter peran
+        enum:
+        - requester
+        - agent
+        - admin
+        in: query
+        name: role
+        type: string
+      - description: Cari pada nama atau email
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handler.UserListEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Daftar pengguna (admin)
+      tags:
+      - users
+  /users/{id}/role:
+    patch:
+      consumes:
+      - application/json
+      description: Khusus admin. Admin tidak dapat mengubah perannya sendiri dan admin
+        terakhir tidak dapat diturunkan.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Peran baru
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handler.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handler.UserEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/helpdesk_backend_internal_http_response.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Ubah peran pengguna (admin)
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    description: 'Masukkan "Bearer" diikuti spasi dan JWT, contoh: Bearer eyJhbGciOi...'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
