@@ -58,10 +58,12 @@ Token disimpan di `localStorage["helpdesk_token"]`; sesi selalu di-hydrate dari 
 
 ## Testing
 
-42 unit test (>PRD §13.2 minimal 5) meliputi: matriks perizinan tiket (`useTicketPermissions`),
+42 unit test (Vitest, happy-dom) meliputi: matriks perizinan tiket (`useTicketPermissions`),
 login/bootstrap di store auth, guard router (guestOnly, requiresAuth, roles, 404),
 label `StatusBadge`/`PriorityBadge`, `RoleSelect` dinonaktifkan untuk peran sendiri,
-`CommentForm` (requester tidak dapat komentar internal), dan daftar-tiket yang tersinkron ke query URL.
+`CommentForm` (requester tidak dapat komentar internal), dan perilaku cache daftar
+(tiket selalu fetch saat masuk halaman karena datanya dinamis; daftar pengguna
+di-cache di Pinia dengan invalidasi setelah edit peran dan logout).
 
 ## Akun Seed
 

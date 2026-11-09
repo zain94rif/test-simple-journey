@@ -1,0 +1,15 @@
+# Hot-reload config for the dev container (used by air). File changes in the
+# bind-mounted source trigger a rebuild inside the container — no image build,
+# no container restart needed.
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/server ./cmd/server"
+bin = "./tmp/server"
+include_ext = ["go"]
+exclude_dir = ["tmp", "docs"]
+include_unchanged = false
+
+[log]
+time = true

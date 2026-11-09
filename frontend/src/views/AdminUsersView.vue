@@ -32,7 +32,11 @@ async function refresh() {
   }
 }
 
-onMounted(refresh)
+onMounted(() => {
+  // User data barely changes on its own; serve the cached store when the
+  // filters match the last request (updateRole invalidates the snapshot).
+  if (!store.canUseCachedUsers()) void refresh()
+})
 
 async function onRoleChange(user: User, role: string) {
   const previousRole = user.role
