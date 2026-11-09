@@ -1,7 +1,6 @@
 import { http } from './http'
 import type {
   ListResponse,
-  LoginResponse,
   SingleResponse,
 } from './types'
 
@@ -19,12 +18,18 @@ export function cleanParams(raw: RawParams): Record<string, string | number | bo
   return out
 }
 
-export async function getSingle<T>(url: string, config?: { params?: RawParams }): Promise<T> {
+export interface GetConfig {
+  params?: RawParams
+  /** Optional AbortSignal so callers can cancel in-flight requests. */
+  signal?: AbortSignal
+}
+
+export async function getSingle<T>(url: string, config?: GetConfig): Promise<T> {
   const res = (await http.get(url, config)) as unknown as SingleResponse<T>
   return res.data
 }
 
-export async function getList<T>(url: string, config?: { params?: RawParams }): Promise<ListResponse<T>> {
+export async function getList<T>(url: string, config?: GetConfig): Promise<ListResponse<T>> {
   return (await http.get(url, config)) as unknown as ListResponse<T>
 }
 

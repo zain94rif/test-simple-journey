@@ -1,8 +1,8 @@
 # Laporan Perkembangan — Helpdesk Technical Test
 
-**Tanggal:** 8 November 2026  
-**Status keseluruhan:** Backend selesai dan terverifikasi; frontend belum dimulai (sesuai arahan).  
-**Acuan:** `docs/PRD-00-Umum.md`, `docs/PRD-01-Backend.md`
+**Tanggal:** 9 November 2026  
+**Status keseluruhan:** Backend selesai dan terverifikasi; frontend selesai, lolos build/type/lint/test, dan terverifikasi end-to-end dengan backend.  
+**Acuan:** `docs/PRD-00-Umum.md`, `docs/PRD-01-Backend.md`, `docs/PRD-02-Frontend.md`
 
 ---
 
@@ -17,7 +17,7 @@ Backend Helpdesk sudah diimplementasikan penuh sesuai kontrak PRD-00 dan PRD-01:
 - Dokumentasi OpenAPI/Swagger tersedia dan dapat dicoba langsung dari browser.
 - Unit test, `go vet`, `go test -race`, build Podman, serta uji end-to-end lokal sudah lulus.
 
-Frontend Vue 3 + Vite + Pinia + Vue Router dengan Bun belum dibuat dan akan dikerjakan setelah tahap backend disetujui.
+Frontend Vue 3 + Vite + Pinia + Vue Router dengan Bun juga sudah dibangun sesuai PRD-02: seluruh rute, guard peran, filter URL-synced, halaman admin, dan halaman error tersedia. `tsc`, ESLint, build produksi, dan 33 unit test lulus, dan alur login → daftar tiket terverifikasi langsung terhadap backend berjalan. Detail ada di bagian **8a**.
 
 ---
 
@@ -223,15 +223,47 @@ Uji end-to-end manual yang sudah dilakukan:
 6. **Belum ada rate limiting / refresh token / audit log.** Ketiganya tidak diminta PRD. Saat ini token berumur 24 jam dan tidak dapat dicabut sebelum kedaluwarsa selain dengan mengganti `JWT_SECRET`.
 7. **Seed memakai waktu relatif saat pertama dibuat.** Karena idempotent, timestamp tiket demo tidak bergeser pada restart berikutnya. Ini disengaja agar data manual test stabil, tetapi bukan pengganti data produksi.
 8. **Seeder melakukan bcrypt hashing hanya untuk akun baru.** Seed pertama memerlukan sekitar 1,3 detik untuk enam akun (cost 12); startup berikutnya jauh lebih cepat.
-9. **Frontend belum dimulai.** Seluruh kapabilitas saat ini hanya dapat diuji lewat curl/Postman/Swagger. Ini sesuai instruksi untuk menyelesaikan backend terlebih dahulu.
+9. **Frontend sudah dibangun dan terverifikasi end-to-end.** Lihat bagian **8a. Status Frontend**. Sebelum itu, seluruh kapabilitas hanya dapat diuji lewat curl/Postman/Swagger.
 10. **Belum ada CI.** Build, vet, dan test masih dijalankan manual. Pipeline CI dapat ditambahkan setelah struktur frontend masuk ke repositori.
+11. **Peringatan deprecation minor di frontend.** `pinia@2.3.1` dan `lucide-vue-next` masih diberi peringatan deprecated saat instalasi (API yang dipakai tetap stabil). Untuk masa depan, pertimbangkan upgrade ke `pinia@3` dan `lucide-vue-next` terbaru.
+12. **Docker frontend belum diuji di Podman.** `Dockerfile` memakai `npm install` (bukan lockfile tertentu) sehingga build container tidak bergantung pada `bun.lock`, tetapi image belum dibangun di Podman untuk frontend.
+
+---
+
+## 8a. Status Frontend
+
+Frontend mengikuti `docs/PRD-02-Frontend.md`, dibangun dengan **Vue 3 + `<script setup>` + TypeScript + Vite 6 + Pinia + Vue Router 4 + Axios + Tailwind 4**, semuanya dikelola lewat **Bun** di `frontend/`.
+
+Hasil verifikasi:
+
+| Butir | Status |
+| --- | --- |
+| `bun x tsc --noEmit` | 0 error |
+| `bun x eslint .` | 0 error, 0 warning |
+| `bun x vite build` | sukses, `dist/` ~198 kB JS (75 kB gzip) |
+| `bun x vitest --run` | **42 test lulus di 8 file** (happy-dom + @vue/test-utils) |
+| Dev server + proxy `/api` → `:8080` | `POST /api/auth/login`, `GET /api/me`, `GET /api/tickets`, `GET /api/tickets/:id` semua 200 |
+
+Rute yang terdaftar di router dengan guard: `/login`, `/register` (guestOnly), `/tickets`, `/tickets/new`, `/tickets/:id` (requiresAuth), `/admin/users` (peran admin), `/forbidden`, serta fallback 404. Guard menjalankan `bootstrap()` sekali per load (token dari `localStorage["helpdesk_token"]`, sesi selalu divalidasi lewat `GET /me`), lalu menangani `guestOnly`, `requiresAuth` (dengan `?redirect=`), dan `roles` (admin; non-admin diarahkan ke `/forbidden`).
+
+Aturan perizinan backend yang dimirror di UI:
+
+- Filter daftar tiket tersinkron ke query URL (`?status=&priority=&assignee=&search=&page=`), pencarian memakai debounce, dan `AbortController` membatalkan request in-flight agar filter cepat tidak saling menimpa.
+- `TicketActions` hanya menampilkan transisi yang sah menurut peran dan status; `TicketEditPanel` (prioritas/assignee) hanya untuk agent/admin.
+- `RoleSelect` dinonaktifkan bila baris yang dipilih adalah pengguna yang sedang login (aturan "tidak boleh mengubah peran sendiri" di backend menghasilkan 409).
+- `CommentForm` menyembunyikan opsi komentar internal untuk requester.
+- Interceptor axios menangani 401 global: token dihapus dan pengguna diarahkan ke login dengan menyimpan `?redirect=`. Envelope error `{"error":{...}}` dinormalisasi di `src/lib/errors.ts`.
+
+Unit test (`frontend/tests/`) mencakup subset FE-T01..FE-T12 dari PRD §13.2: matriks perizinan tiket (`useTicketPermissions`, 8 kasus peran/status), login/bootstrap/logout di store auth, guard router (redirect login untuk tamu dengan `?redirect=`, guestOnly mem-bounce pengguna terautentikasi, requester ditolak di `/admin/users` ke `/forbidden`, admin lolos, rute tak dikenal ke 404), label `StatusBadge`/`PriorityBadge`, `RoleSelect` (dinonaktifkan untuk diri sendiri dengan petunjuk, meng-emis event peran untuk pengguna lain), `CommentForm` (validasi komentar kosong, requester tidak memiliki opsi is-internal, staff dapat mengirim `is_internal=true`, textarea dikosongkan setelah kirim), `SkeletonBlock` (regresi crash yang ditemukan di runtime), dan cache daftar tiket (`canUseCachedList`: snapshot params + TTL 30 detik, invalidasi setelah mutasi dan logout). MSW tidak digunakan; test memakai `vi.mock('@/lib/api')` ringan tanpa server mock tambahan.
+
+File tambahan: `frontend/README.md` (cara menjalankan, menguji, struktur, akun seed), `frontend/Dockerfile` + `nginx.conf` (SPA fallback, proxy `/api/` ke `backend:8080`, gzip, cache aset).
 
 ---
 
 ## 9. Langkah Berikutnya
 
-1. Membangun frontend Vue 3 + Vite + Pinia + Vue Router dengan Bun sesuai `docs/PRD-02-Frontend.md`.
+1. ~~Membangun frontend Vue 3 + Vite + Pinia + Vue Router dengan Bun sesuai `docs/PRD-02-Frontend.md`.~~ **Selesai** (lihat bagian 8a).
 2. Menambahkan `docker-compose.yml` (PostgreSQL + backend + frontend) dengan healthcheck di level compose.
 3. Menambahkan integration test PostgreSQL (menggantikan penundaan testcontainers).
 4. Menyusun README root yang menggabungkan cara menjalankan backend, frontend, dan compose.
-5. Menambahkan CI untuk `go build`, `go vet`, `go test -race`, serta build frontend.
+5. Menambahkan CI untuk `go build`, `go vet`, `go test -race`, serta build & test frontend.

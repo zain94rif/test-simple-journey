@@ -1,4 +1,3 @@
-/// <reference types="vue-router" />
 import 'vue-router'
 
 declare module 'vue-router' {

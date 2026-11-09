@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
@@ -18,5 +19,11 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  // Vitest is configured here so we only load one copy of Vite's types.
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+    include: ['tests/**/*.spec.ts', 'src/**/*.spec.ts'],
   },
 })
