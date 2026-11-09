@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.25-alpine AS build
+# Toolchain selaras dengan docker-compose.yml (golang:1.26-alpine, dev pakai air)
+FROM docker.io/library/golang:1.26-alpine AS build
 
 WORKDIR /src
 RUN apk add --no-cache ca-certificates git
@@ -11,7 +12,7 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
 
-FROM alpine:3.21
+FROM docker.io/library/alpine:3.21
 
 RUN apk add --no-cache ca-certificates wget \
     && addgroup -S app \

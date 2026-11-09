@@ -15,7 +15,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        // Inside docker-compose the backend is reachable as `backend:8080`;
+        // standalone dev on the host uses the default localhost target.
+        target: process.env.VITE_PROXY_TARGET ?? 'http://localhost:8080',
         changeOrigin: true,
       },
     },

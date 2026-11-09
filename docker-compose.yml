@@ -1,0 +1,85 @@
+# Dev-oriented compose untuk Podman (podman-compose). Tidak ada build image per
+# perubahan kode: source di-mount sebagai volume + hot reload (Vite HMR untuk FE,
+# air untuk BE). Deployment produksi tetap memakai Dockerfile masing-masing.
+#
+# Jalankan: podman-compose -f docker-compose.yml up -d
+# FE: http://localhost:5173 · BE/Swagger: http://localhost:8080/swagger/index.html
+# Port host untuk Postgres sengaja 5433 agar tidak bentrok dengan Postgres
+# development yang terpasang lokal (tolak memetakan 5432:5432).
+
+services:
+  db:
+    image: docker.io/library/postgres:16-alpine
+    container_name: helpdesk-dev-db
+    environment:
+      POSTGRES_USER: helpdesk
+      POSTGRES_PASSWORD: helpdesk
+      POSTGRES_DB: helpdesk
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helpdesk -d helpdesk"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  backend:
+    # Stock toolchain image: codes live in ./backend (bind mount), air builds
+    # the binary in-place on every .go change. No image bake needed.
+    image: docker.io/library/golang:1.26-alpine
+    container_name: helpdesk-dev-backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app:Z
+      - go_pkgs:/go/pkg/mod
+      - go_tools:/go/bin
+    environment:
+      # Precedence rule: real env vars win over file-loaded vars (godotenv),
+      # so these explicitly override backend/.env for container networking.
+      DATABASE_URL: postgres://helpdesk:helpdesk@db:5432/helpdesk?sslmode=disable
+      APP_PORT: "8080"
+    env_file:
+      - ./backend/.env
+    command: >-
+      sh -c "go install github.com/air-verse/air@v1.67.4 && air -c air.dev.toml"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/api/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  frontend:
+    # Vite dev server with HMR: edits in ./frontend land in the browser live.
+    image: docker.io/oven/bun:1  # selaras dengan frontend/Dockerfile: oven/bun:1-alpine
+    container_name: helpdesk-dev-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app:Z
+      # Keep container-installed deps isolated from the host copy.
+      - frontend_node_modules:/app/node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      VITE_PROXY_TARGET: http://backend:8080
+    command: >-
+      sh -c "bun install &&
+             bunx --bun vite --host 0.0.0.0 --port 5173 --strictPort"
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  go_pkgs:
+  go_tools:
+  frontend_node_modules:

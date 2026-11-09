@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { getSingle, postSingle } from '@/lib/api'
 import { clearToken, readToken, writeToken } from '@/lib/http'
 import type { LoginResponse, User } from '@/lib/types'
-import { useTicketStore } from './tickets'
+import { useUserStore } from './users'
 
 interface RegisterPayload {
   name: string
@@ -80,8 +80,8 @@ export const useAuthStore = defineStore('auth', {
       this.token = null
       this.user = null
       clearToken()
-      // Never let the next account see the previous account's cached list.
-      useTicketStore().invalidateListCache()
+      // Never let the next account see the previous account's cached data.
+      useUserStore().invalidateUsersCache()
     },
     logout() {
       this.clearSession()

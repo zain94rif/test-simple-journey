@@ -241,7 +241,7 @@ Hasil verifikasi:
 | `bun x tsc --noEmit` | 0 error |
 | `bun x eslint .` | 0 error, 0 warning |
 | `bun x vite build` | sukses, `dist/` ~198 kB JS (75 kB gzip) |
-| `bun x vitest --run` | **42 test lulus di 8 file** (happy-dom + @vue/test-utils) |
+| `bun x vitest --run` | **44 test lulus di 8 file** (happy-dom + @vue/test-utils) |
 | Dev server + proxy `/api` → `:8080` | `POST /api/auth/login`, `GET /api/me`, `GET /api/tickets`, `GET /api/tickets/:id` semua 200 |
 
 Rute yang terdaftar di router dengan guard: `/login`, `/register` (guestOnly), `/tickets`, `/tickets/new`, `/tickets/:id` (requiresAuth), `/admin/users` (peran admin), `/forbidden`, serta fallback 404. Guard menjalankan `bootstrap()` sekali per load (token dari `localStorage["helpdesk_token"]`, sesi selalu divalidasi lewat `GET /me`), lalu menangani `guestOnly`, `requiresAuth` (dengan `?redirect=`), dan `roles` (admin; non-admin diarahkan ke `/forbidden`).
@@ -254,9 +254,9 @@ Aturan perizinan backend yang dimirror di UI:
 - `CommentForm` menyembunyikan opsi komentar internal untuk requester.
 - Interceptor axios menangani 401 global: token dihapus dan pengguna diarahkan ke login dengan menyimpan `?redirect=`. Envelope error `{"error":{...}}` dinormalisasi di `src/lib/errors.ts`.
 
-Unit test (`frontend/tests/`) mencakup subset FE-T01..FE-T12 dari PRD §13.2: matriks perizinan tiket (`useTicketPermissions`, 8 kasus peran/status), login/bootstrap/logout di store auth, guard router (redirect login untuk tamu dengan `?redirect=`, guestOnly mem-bounce pengguna terautentikasi, requester ditolak di `/admin/users` ke `/forbidden`, admin lolos, rute tak dikenal ke 404), label `StatusBadge`/`PriorityBadge`, `RoleSelect` (dinonaktifkan untuk diri sendiri dengan petunjuk, meng-emis event peran untuk pengguna lain), `CommentForm` (validasi komentar kosong, requester tidak memiliki opsi is-internal, staff dapat mengirim `is_internal=true`, textarea dikosongkan setelah kirim), `SkeletonBlock` (regresi crash yang ditemukan di runtime), dan cache daftar tiket (`canUseCachedList`: snapshot params + TTL 30 detik, invalidasi setelah mutasi dan logout). MSW tidak digunakan; test memakai `vi.mock('@/lib/api')` ringan tanpa server mock tambahan.
+Unit test (`frontend/tests/`) mencakup subset FE-T01..FE-T12 dari PRD §13.2: matriks perizinan tiket (`useTicketPermissions`, 8 kasus peran/status), login/bootstrap/logout di store auth, guard router (redirect login untuk tamu dengan `?redirect=`, guestOnly mem-bounce pengguna terautentikasi, requester ditolak di `/admin/users` ke `/forbidden`, admin lolos, rute tak dikenal ke 404), label `StatusBadge`/`PriorityBadge`, `RoleSelect` (dinonaktifkan untuk diri sendiri dengan petunjuk, meng-emis event peran untuk pengguna lain), `CommentForm` (validasi komentar kosong, requester tidak memiliki opsi is-internal, staff dapat mengirim `is_internal=true`, textarea dikosongkan setelah kirim), `SkeletonBlock` (regresi crash yang ditemukan di runtime), dan strategi caching daftar: daftar tiket selalu di-fetch ulang setiap masuk halaman karena datanya dinamis (agent lain dapat mengubah status sewaktu-waktu), sementara daftar pengguna — yang hampir tidak berubah sendiri — dicache di Pinia dengan TTL 30 detik dan invalidasi otomatis setelah `updateRole` dan logout. MSW tidak digunakan; test memakai `vi.mock('@/lib/api')` ringan tanpa server mock tambahan.
 
-File tambahan: `frontend/README.md` (cara menjalankan, menguji, struktur, akun seed), `frontend/Dockerfile` + `nginx.conf` (SPA fallback, proxy `/api/` ke `backend:8080`, gzip, cache aset).
+File tambahan: `frontend/README.md` (cara menjalankan, menguji, struktur, akun seed), `frontend/Dockerfile` + `nginx.conf` (SPA fallback, proxy `/api/` ke `backend:8080`, gzip, cache aset). `docker-compose.yml` di root (dev, podman-compose): Postgres 16 + backend `golang:1.26-alpine` dengan air hot-reload + frontend `oven/bun:1` dengan Vite HMR — source di-mount sebagai volume sehingga edit kode tidak memerlukan build ulang image; Dockerfile produksi FE (bun) & BE (Go 1.26) selaras dengan toolchain compose tersebut.
 
 ---
 

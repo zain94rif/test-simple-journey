@@ -9,6 +9,8 @@ frontend/.env
 frontend/.env.*
 !frontend/.env.example
 
+node_modules/
+
 # Go
 backend/bin/
 backend/coverage.out

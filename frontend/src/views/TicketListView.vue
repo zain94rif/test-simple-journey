@@ -78,12 +78,6 @@ watch(
   () => ({ ...store.filters }),
   async () => {
     if (syncingFromUrl) return
-    // Identical, still-fresh request (e.g. URL filter restore on re-entry):
-    // keep the rendered cache and do not hit the API again.
-    if (store.canUseCachedList()) {
-      await router.replace({ query: queryFromFilters() })
-      return
-    }
     // Any filter change resets to page 1 unless the change itself was the page.
     await router.replace({ query: queryFromFilters() })
     await refresh()
@@ -110,11 +104,11 @@ watch(
   },
 )
 
-onMounted(() => {
+onMounted(async () => {
   applyRouteQuery()
-  // Re-entering the page with an identical, still-fresh request: serve from
-  // the store cache instead of hitting the API again.
-  if (!store.canUseCachedList()) void refresh()
+  // Tickets change while the user is away (other agents work in parallel),
+  // so re-entering the page always shows the freshest data.
+  await refresh()
 })
 
 function onFilterChange(patch: Partial<Filters>) {
