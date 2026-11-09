@@ -25,6 +25,20 @@ export interface UpdateTicketPayload {
 // Module-level cancellation handle for the ticket list.
 let listAborter: AbortController | undefined
 
+/** How long a successful ticket-list response is considered fresh (ms). */
+const LIST_FRESH_MS = 30_000
+
+/**
+ * Cache bookkeeping so re-entering the list page with the same filters does
+ * not trigger a redundant request. Cleared by every mutation so fresh data
+ * is always shown after create/update/comment.
+ */
+interface ListSnapshot {
+  params: Record<string, string | number | boolean>
+  requesterScope: boolean
+  fetchedAt: number
+}
+let lastList: ListSnapshot | null = null
 
 export const useTicketStore = defineStore('tickets', {
   state: () => ({
@@ -65,7 +79,8 @@ export const useTicketStore = defineStore('tickets', {
       if (f.search) params.search = f.search
       if (!auth.isRequester) {
         if (f.assignee === 'unassigned' || f.unassigned) params.unassigned = true
-        if (f.assignee === 'me') params.assignee_id = auth.user?.id
+        if (f.assignee === 'me' && auth.user?.id !== undefined)
+          params.assignee_id = auth.user.id
       }
       return params
     },
@@ -77,14 +92,23 @@ export const useTicketStore = defineStore('tickets', {
       this.listLoading = true
       this.listError = null
       try {
+        const params = this.buildParams()
         const res = await getList<Ticket>('/tickets', {
-          params: this.buildParams(),
+          params,
           signal: controller.signal,
         })
         this.items = res.data
         if (res.meta) this.meta = res.meta
+        lastList = {
+          params,
+          requesterScope: useAuthStore().isRequester,
+          fetchedAt: Date.now(),
+        }
       } catch (err) {
         if (controller.signal.aborted) return
+        const message =
+          (err as { message?: string })?.message ?? 'Tidak dapat memuat daftar tiket.'
+        this.listError = message
         throw err
       } finally {
         if (listAborter === controller) {
@@ -92,12 +116,16 @@ export const useTicketStore = defineStore('tickets', {
           this.listLoading = false
         }
       }
-    },
-    async fetchTicket(id: number | string) {
+    },    async fetchTicket(id: number | string) {
       this.detailLoading = true
       this.detailError = null
       try {
         this.detail = await getSingle<TicketDetail>(`/tickets/${id}`)
+      } catch (err) {
+        const message =
+          (err as { message?: string })?.message ?? 'Tidak dapat memuat tiket.'
+        this.detailError = message
+        throw err
       } finally {
         this.detailLoading = false
       }
@@ -108,6 +136,7 @@ export const useTicketStore = defineStore('tickets', {
         return await postSingle<Ticket>('/tickets', payload)
       } finally {
         this.mutationLoading = false
+        lastList = null // a new ticket must appear on the next visit
       }
     },
     async updateTicket(id: number | string, patch: UpdateTicketPayload) {
@@ -116,6 +145,7 @@ export const useTicketStore = defineStore('tickets', {
         return await patchSingle<Ticket>(`/tickets/${id}`, patch)
       } finally {
         this.mutationLoading = false
+        lastList = null
       }
     },
     async addComment(id: number | string, body: string, isInternal: boolean): Promise<Comment> {
@@ -130,7 +160,29 @@ export const useTicketStore = defineStore('tickets', {
         return comment
       } finally {
         this.mutationLoading = false
+        lastList = null
       }
+    },
+    /**
+     * True when the store already holds a fresh list for exactly these
+     * params, so the view can skip the request on re-entry.
+     */
+    canUseCachedList(): boolean {
+      if (!lastList || this.items.length === 0) return false
+      if (Date.now() - lastList.fetchedAt > LIST_FRESH_MS) return false
+      const auth = useAuthStore()
+      if (auth.isRequester !== lastList.requesterScope) return false
+      const next = this.buildParams()
+      const prev = lastList.params
+      const keys = new Set([...Object.keys(prev), ...Object.keys(next)])
+      for (const key of keys) {
+        if (prev[key] !== next[key]) return false
+      }
+      return true
+    },
+    /** Forget the cached list snapshot (used after logout or in tests). */
+    invalidateListCache() {
+      lastList = null
     },
     setFilters(partial: Partial<TicketFilters>) {
       const pageChanged = partial.page !== undefined

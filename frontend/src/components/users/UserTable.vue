@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import type { User } from '@/lib/types'
-import AppSelect from '@/components/ui/AppSelect.vue'
+import RoleSelect from './RoleSelect.vue'
 import AppSpinner from '@/components/ui/AppSpinner.vue'
-import { ROLE_OPTIONS } from '@/lib/constants'
 import { formatDateTime } from '@/lib/format'
 
 const props = defineProps<{
@@ -18,11 +16,6 @@ const emit = defineEmits<{
 }>()
 
 const auth = useAuthStore()
-const roleOptions = computed(() => ROLE_OPTIONS)
-
-function canEdit(user: User): boolean {
-  return auth.user?.id !== user.id
-}
 </script>
 
 <template>
@@ -45,13 +38,10 @@ function canEdit(user: User): boolean {
           <td class="px-4 py-3 text-slate-600">{{ user.email }}</td>
           <td class="px-4 py-3">
             <div class="flex items-center gap-2">
-              <AppSelect
-                :model-value="user.role"
-                :options="roleOptions"
-                :disabled="!canEdit(user) || props.updatingId === user.id"
-                :title="canEdit(user) ? undefined : 'Anda tidak dapat mengubah peran sendiri.'"
-                class="w-40"
-                @update:model-value="(value: string) => emit('update:role', user, value)"
+              <RoleSelect
+                :user="user"
+                :saving="props.updatingId === user.id"
+                @change="(value: string) => emit('update:role', user, value)"
               />
               <AppSpinner v-if="props.updatingId === user.id" class="h-4 w-4 text-slate-500" />
             </div>
