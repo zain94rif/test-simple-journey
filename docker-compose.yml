@@ -30,13 +30,14 @@ services:
   backend:
     # Stock toolchain image: codes live in ./backend (bind mount), air builds
     # the binary in-place on every .go change. No image bake needed.
-    image: docker.io/library/golang:1.26-alpine
+    image: docker.io/library/golang:1.22-alpine
     container_name: helpdesk-dev-backend
     working_dir: /app
     volumes:
       - ./backend:/app:Z
       - go_pkgs:/go/pkg/mod
       - go_tools:/go/bin
+      - go_cache:/root/.cache/go-build
     environment:
       # Precedence rule: real env vars win over file-loaded vars (godotenv).
       # Nilai default dev lengkap di sini supaya `podman-compose up` bekerja
@@ -57,7 +58,7 @@ services:
       AUTO_SEED: "true"
       SEED_DEMO_DATA: "true"
     command: >-
-      sh -c "go install github.com/air-verse/air@v1.67.4 && air -c air.dev.toml"
+      sh -c "command -v air >/dev/null || go install github.com/air-verse/air@v1.52.3; air -c air.dev.toml"
     ports:
       - "8080:8080"
     depends_on:
@@ -73,7 +74,7 @@ services:
 
   frontend:
     # Vite dev server with HMR: edits in ./frontend land in the browser live.
-    image: docker.io/oven/bun:1  # selaras dengan frontend/Dockerfile: oven/bun:1-alpine
+    image: docker.io/oven/bun:1.4.2-alpine  # selaras dengan frontend/Dockerfile: oven/bun:1.4.2-alpine
     container_name: helpdesk-dev-frontend
     working_dir: /app
     volumes:
@@ -84,7 +85,7 @@ services:
       CHOKIDAR_USEPOLLING: "true"
       VITE_PROXY_TARGET: http://backend:8080
     command: >-
-      sh -c "bun install &&
+      sh -c "test -x node_modules/.bin/vite || bun install;
              bunx --bun vite --host 0.0.0.0 --port 5173 --strictPort"
     ports:
       - "5173:5173"
@@ -94,4 +95,5 @@ volumes:
   pgdata:
   go_pkgs:
   go_tools:
+  go_cache:
   frontend_node_modules:

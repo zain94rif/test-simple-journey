@@ -92,8 +92,8 @@ podman-compose -f docker-compose.yml down -v       # matikan + hapus volume db (
 
 **Catatan arsitektur compose:**
 - `db`: `docker.io/library/postgres:16-alpine` + healthcheck; data di volume `pgdata`.
-- `backend`: `docker.io/library/golang:1.26-alpine` menjalankan `air -c air.dev.toml`; kode di-bind-mount sehingga perubahan `*.go` langsung re-compile.
-- `frontend`: `docker.io/oven/bun:1` menjalankan `bunx --bun vite --host`; kode di-bind-mount, `node_modules` di volume terpisah, polling watcher aktif (`CHOKIDAR_USEPOLLING`).
+- `backend`: `docker.io/library/golang:1.22-alpine` menjalankan `air -c air.dev.toml` (air `@v1.52.3`, selaras PRD Go 1.22); kode di-bind-mount sehingga perubahan `*.go` langsung re-compile; volum `go_cache` membuat restart BE ≈16 detik.
+- `frontend`: `docker.io/oven/bun:1.4.2-alpine` menjalankan `bunx --bun vite --host`; kode di-bind-mount, `node_modules` di volume terpisah, polling watcher aktif (`CHOKIDAR_USEPOLLING`).
 - Frontend mem-proxy `/api` ke `http://backend:8080` (via `VITE_PROXY_TARGET`), jadi cukup buka satu port 5173.
 
 **Tidak perlu `backend/.env` untuk menjalankan stack compose** — semua variabel dev (termasuk `JWT_SECRET` demo dan kredensial seed) sudah disediakan `docker-compose.yml`. File `.env` bersifat opsional: salin dari `backend/.env.example` bila ingin override, tapi catat bahwa key yang didefinisikan di bagian `environment:` compose tetap menang (godotenv tidak menimpa env riil). `.env` tetap diperlukan bila menjalankan server di luar compose (`go run ./cmd/server` / `air`).

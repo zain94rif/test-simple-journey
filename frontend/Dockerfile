@@ -1,5 +1,5 @@
 # build — toolchain bun, konsisten dengan docker-compose.yml (dev) & bun.lock
-FROM docker.io/oven/bun:1-alpine AS build
+FROM docker.io/oven/bun:1.4.2-alpine AS build
 WORKDIR /app
 
 COPY package.json bun.lock ./
