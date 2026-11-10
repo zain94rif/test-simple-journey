@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed, ref, useId } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -27,8 +27,16 @@ const props = withDefaults(
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>()
 
 const fieldId = useId()
+const textareaEl = ref<HTMLTextAreaElement | null>(null)
 const charCount = computed(() => props.modelValue.length)
 const describedBy = computed(() => (props.error ? `${fieldId}-error` : undefined))
+
+/** Programmatic focus support (used by forms to jump to the first error). */
+function focus() {
+  textareaEl.value?.focus()
+}
+
+defineExpose({ focus })
 </script>
 
 <template>
@@ -36,11 +44,14 @@ const describedBy = computed(() => (props.error ? `${fieldId}-error` : undefined
     <div class="mb-1 flex items-center justify-between">
       <label :for="fieldId" class="block text-sm font-medium text-slate-700">
         {{ props.label }}
+        <span v-if="props.required" class="text-red-600" aria-hidden="true">*</span>
+        <span v-if="props.required" class="sr-only">(wajib diisi)</span>
       </label>
       <span v-if="props.counter" class="text-xs text-slate-500">{{ charCount }}/{{ props.counter }}</span>
     </div>
     <textarea
       :id="fieldId"
+      ref="textareaEl"
       :value="props.modelValue"
       :rows="props.rows"
       :placeholder="props.placeholder"

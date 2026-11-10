@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed, ref, useId } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -27,6 +27,14 @@ const props = withDefaults(
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>()
 
 const inputId = useId()
+const inputEl = ref<HTMLInputElement | null>(null)
+
+/** Programmatic focus support (used by forms to jump to the first error). */
+function focus() {
+  inputEl.value?.focus()
+}
+
+defineExpose({ focus })
 const describedBy = computed(() =>
   props.error ? `${inputId}-error` : props.hint ? `${inputId}-hint` : undefined,
 )
@@ -36,9 +44,12 @@ const describedBy = computed(() =>
   <div class="w-full">
     <label :for="inputId" class="mb-1 block text-sm font-medium text-slate-700">
       {{ props.label }}
+      <span v-if="props.required" class="text-red-600" aria-hidden="true">*</span>
+      <span v-if="props.required" class="sr-only">(wajib diisi)</span>
     </label>
     <input
       :id="inputId"
+      ref="inputEl"
       :type="props.type"
       :value="props.modelValue"
       :placeholder="props.placeholder"

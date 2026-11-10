@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import TicketForm, { type FormErrors } from '@/components/tickets/TicketForm.vue'
+import TicketForm from '@/components/tickets/TicketForm.vue'
+import type { TicketFormErrors as FormErrors } from '@/lib/types'
 import { useTicketStore } from '@/stores/tickets'
 import { useToast } from '@/composables/useToast'
 import { toApiError } from '@/lib/errors'

@@ -241,7 +241,7 @@ Hasil verifikasi:
 | `bun x tsc --noEmit` | 0 error |
 | `bun x eslint .` | 0 error, 0 warning |
 | `bun x vite build` | sukses, `dist/` ~198 kB JS (75 kB gzip) |
-| `bun x vitest --run` | **44 test lulus di 8 file** (happy-dom + @vue/test-utils) |
+| `bun x vitest --run` | **51 test lulus di 9 file** (happy-dom + @vue/test-utils) |
 | Dev server + proxy `/api` → `:8080` | `POST /api/auth/login`, `GET /api/me`, `GET /api/tickets`, `GET /api/tickets/:id` semua 200 |
 
 Rute yang terdaftar di router dengan guard: `/login`, `/register` (guestOnly), `/tickets`, `/tickets/new`, `/tickets/:id` (requiresAuth), `/admin/users` (peran admin), `/forbidden`, serta fallback 404. Guard menjalankan `bootstrap()` sekali per load (token dari `localStorage["helpdesk_token"]`, sesi selalu divalidasi lewat `GET /me`), lalu menangani `guestOnly`, `requiresAuth` (dengan `?redirect=`), dan `roles` (admin; non-admin diarahkan ke `/forbidden`).

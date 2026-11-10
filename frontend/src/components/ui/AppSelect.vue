@@ -13,6 +13,7 @@ const props = withDefaults(
     modelValue: string
     error?: string | null
     disabled?: boolean
+    required?: boolean
   }>(),
   {
     label: undefined,
@@ -32,11 +33,14 @@ const describedBy = computed(() => (props.error ? `${selectId}-error` : undefine
   <div class="w-full">
     <label v-if="props.label" :for="selectId" class="mb-1 block text-sm font-medium text-slate-700">
       {{ props.label }}
+      <span v-if="props.required" class="text-red-600" aria-hidden="true">*</span>
+      <span v-if="props.required" class="sr-only">(wajib diisi)</span>
     </label>
     <select
       :id="selectId"
       :value="current"
       :disabled="props.disabled"
+      :required="props.required"
       :aria-invalid="props.error ? 'true' : undefined"
       :aria-describedby="describedBy"
       :class="[
