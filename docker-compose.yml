@@ -38,12 +38,24 @@ services:
       - go_pkgs:/go/pkg/mod
       - go_tools:/go/bin
     environment:
-      # Precedence rule: real env vars win over file-loaded vars (godotenv),
-      # so these explicitly override backend/.env for container networking.
+      # Precedence rule: real env vars win over file-loaded vars (godotenv).
+      # Nilai default dev lengkap di sini supaya `podman-compose up` bekerja
+      # TANPA backend/.env (fresh clone). backend/.env bersifat opsional:
+      # buat dari backend/.env.example bila ingin override; compose `environment`
+      # di bawah tetap menang atas .env untuk key yang didefinisikan.
       DATABASE_URL: postgres://helpdesk:helpdesk@db:5432/helpdesk?sslmode=disable
       APP_PORT: "8080"
-    env_file:
-      - ./backend/.env
+      # Dev-only demo secret & kredensial seed — jangan dipakai di produksi.
+      JWT_SECRET: dev-only-secret-please-rotate-before-production-00
+      JWT_TTL: 24h
+      BCRYPT_COST: "12"
+      DB_MAX_CONNS: "10"
+      SEED_ADMIN_PASSWORD: Admin123!
+      SEED_AGENT_PASSWORD: Agent123!
+      SEED_REQUESTER_PASSWORD: Requester123!
+      AUTO_MIGRATE: "true"
+      AUTO_SEED: "true"
+      SEED_DEMO_DATA: "true"
     command: >-
       sh -c "go install github.com/air-verse/air@v1.67.4 && air -c air.dev.toml"
     ports:
