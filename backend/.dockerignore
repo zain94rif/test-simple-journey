@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 bin/
+tmp/
 coverage.out
 coverage.html
 *.test

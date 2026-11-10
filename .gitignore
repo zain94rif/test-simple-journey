@@ -13,6 +13,7 @@ node_modules/
 
 # Go
 backend/bin/
+backend/tmp/
 backend/coverage.out
 backend/coverage.html
 *.test
