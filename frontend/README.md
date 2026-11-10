@@ -58,10 +58,12 @@ Token disimpan di `localStorage["helpdesk_token"]`; sesi selalu di-hydrate dari 
 
 ## Testing
 
-42 unit test (Vitest, happy-dom) meliputi: matriks perizinan tiket (`useTicketPermissions`),
+51 unit test (Vitest, happy-dom) meliputi: matriks perizinan tiket (`useTicketPermissions`),
 login/bootstrap di store auth, guard router (guestOnly, requiresAuth, roles, 404),
 label `StatusBadge`/`PriorityBadge`, `RoleSelect` dinonaktifkan untuk peran sendiri,
-`CommentForm` (requester tidak dapat komentar internal), dan perilaku cache daftar
+`TicketForm` (requester tidak dapat komentar internal; validasi create: field wajib ditandai `*`,
+pesan "wajib diisi" vs batas minimum terpisah, ringkasan error, fokus ke field pertama yang salah,
+tombol tidak punya double-submit),`CommentForm` (requester tidak bisa komentar internal), dan perilaku cache daftar
 (tiket selalu fetch saat masuk halaman karena datanya dinamis; daftar pengguna
 di-cache di Pinia dengan invalidasi setelah edit peran dan logout).
 

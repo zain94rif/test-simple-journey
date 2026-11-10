@@ -92,3 +92,11 @@ export interface UserFilters {
 export interface AdminRolePayload {
   role: string
 }
+
+/** Client/sa-side validation messages per ticket form field. */
+export interface TicketFormErrors {
+  title?: string
+  description?: string
+  category?: string
+  priority?: string
+}
