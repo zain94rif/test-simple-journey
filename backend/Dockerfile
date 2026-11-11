@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# Toolchain selaras dengan docker-compose.yml (golang:1.26-alpine, dev pakai air)
+# Toolchain selaras dengan docker-compose.yml (golang:1.22-alpine, dev pakai air)
 FROM docker.io/library/golang:1.22-alpine AS build
 
 WORKDIR /src

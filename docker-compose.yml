@@ -53,6 +53,7 @@ services:
       DB_MAX_CONNS: "10"
       SEED_ADMIN_PASSWORD: Admin123!
       SEED_AGENT_PASSWORD: Agent123!
+      SEED_AGENT2_PASSWORD: Agent123!
       SEED_REQUESTER_PASSWORD: Requester123!
       AUTO_MIGRATE: "true"
       AUTO_SEED: "true"
